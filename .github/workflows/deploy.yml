@@ -2,9 +2,9 @@ name: Deploy API
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -13,116 +13,116 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Run tests
-      run: |
-        pytest tests/ -v
-      env:
-        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     permissions:
       contents: read
       packages: write
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-    
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   deploy-to-cloud:
     needs: build-and-deploy
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
-    - name: Deploy to Cloud Run (Google Cloud)
-      run: |
-        echo "🚀 Deploying to Google Cloud Run..."
-        # Uncomment and configure for Google Cloud Run:
-        # gcloud run deploy automated-pr-review \
-        #   --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-        #   --platform managed \
-        #   --region us-central1 \
-        #   --allow-unauthenticated \
-        #   --set-env-vars ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
-        #   --set-env-vars GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Deploy to Railway
-      run: |
-        echo "🚂 Deploying to Railway..."
-        # Uncomment and configure for Railway:
-        # curl -f -X POST \
-        #   -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
-        #   -H "Content-Type: application/json" \
-        #   -d '{"environment":"production","image":"${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"}' \
-        #   https://backboard.railway.app/graphql/v2
-    
-    - name: Deploy to Render
-      run: |
-        echo "🎨 Deploying to Render..."
-        # Uncomment and configure for Render:
-        # curl -X POST \
-        #   -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-        #   -H "Content-Type: application/json" \
-        #   -d '{"serviceId":"${{ secrets.RENDER_SERVICE_ID }}"}' \
-        #   https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys
-    
-    - name: Deploy to Heroku
-      run: |
-        echo "💜 Deploying to Heroku..."
-        # Uncomment and configure for Heroku:
-        # docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
-        # docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
-        # heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
-    
-    - name: Deployment Complete
-      run: |
-        echo "✅ Deployment completed successfully!"
-        echo "📝 Remember to:"
-        echo "   1. Configure your chosen cloud provider"
-        echo "   2. Set up required secrets in GitHub"
-        echo "   3. Update webhook URLs in your repositories"
+      - name: Deploy to Cloud Run (Google Cloud)
+        run: |
+          echo "🚀 Deploying to Google Cloud Run..."
+          # Uncomment and configure for Google Cloud Run:
+          # gcloud run deploy automated-pr-review \
+          #   --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+          #   --platform managed \
+          #   --region us-central1 \
+          #   --allow-unauthenticated \
+          #   --set-env-vars ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
+          #   --set-env-vars GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Railway
+        run: |
+          echo "🚂 Deploying to Railway..."
+          # Uncomment and configure for Railway:
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"environment":"production","image":"${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"}' \
+            https://backboard.railway.app/graphql/v2
+
+      - name: Deploy to Render
+        run: |
+          echo "🎨 Deploying to Render..."
+          # Uncomment and configure for Render:
+          # curl -X POST \
+          #   -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          #   -H "Content-Type: application/json" \
+          #   -d '{"serviceId":"${{ secrets.RENDER_SERVICE_ID }}"}' \
+          #   https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys
+
+      - name: Deploy to Heroku
+        run: |
+          echo "💜 Deploying to Heroku..."
+          # Uncomment and configure for Heroku:
+          # docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+          # docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+          # heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
+
+      - name: Deployment Complete
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "📝 Remember to:"
+          echo "   1. Configure your chosen cloud provider"
+          echo "   2. Set up required secrets in GitHub"
+          echo "   3. Update webhook URLs in your repositories"
