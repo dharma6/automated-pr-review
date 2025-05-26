@@ -1,6 +1,8 @@
 from pydantic import BaseModel
+from typing import Dict
+
 
 class PullRequestPayload(BaseModel):
     action: str
-    pull_request: dict
-    repository: dict
+    pull_request: Dict
+    repository: Dict
