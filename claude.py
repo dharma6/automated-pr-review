@@ -28,7 +28,7 @@ async def review_with_claude(diff: str, prompt_instructions: str) -> Optional[st
         ]
     }
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(CLAUDE_API_URL, headers=headers, json=payload)
         response.raise_for_status()
         return response.json()['content'][0]['text']
